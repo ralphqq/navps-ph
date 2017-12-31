@@ -43,7 +43,7 @@ Just be sure to enclose input dates in quotation marks.
 
 The script requires that you provide a valid date for at least one of the parameters. As shown above, entering both `-s` (start) and `-e` (end)dates tells the scraper to access all the daily NAVPS report that fall within the given interval.
 
-To scrape all NAVPS reports starting from a given date up to the most recently available report, provide a value only to the `-s` parameter. The following command collects NAVPS from December 1, 2017 up to December 29 (the most recent report):
+To scrape all NAVPS reports starting from a given date up to the most recently available report, provide a value only to the `-s` parameter. The following command collects NAVPS from December 1, 2017 up to December 29, 2017 (the latest report at time of writing):
 
 ```
 $ navps -s "2017-12-01"
