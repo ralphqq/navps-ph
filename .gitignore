@@ -1,5 +1,6 @@
 *.pyc
 *.json
 *.csv
+*.log
 Reports
 __pycache__

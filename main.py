@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 import sys
 import time
@@ -9,8 +10,13 @@ from dateutil.parser import parse
 
 from mutualfunds import DailyNAVPS
 
+LOGFILE = 'runtime.log'
 TIMEOUT = 5
 OUTDIR = 'Reports'
+
+def stringify_date(date):
+    """Convert datetime object into human-readable string"""
+    return date.strftime('%Y-%m-%d')
 
 def save_report(report):
     """Create the directory structure where output is saved"""
@@ -43,31 +49,53 @@ def set_date_range(start, end):
 @click.option('-e', '--end',
               help='Ending date (up to most recent trading day)')
 def run(start, end):
+    logging.basicConfig(format='%(asctime)s %(message)s',
+                        filename=LOGFILE,
+                        level=logging.INFO)
+    logging.info('[INFO] Started')
     click.echo('Initializing')
     dates = set_date_range(start, end)
     if dates is None:
-        click.echo('No dates specified.')
+        msg = 'No dates specified. Exited'
+        click.echo(msg)
+        logging.info('[INFO] {}'.format(msg))
         sys.exit(1)
     
     curr_date = dates.start
-    click.echo('From: {:%Y-%m-%d}'.format(curr_date))
-    click.echo('To: {:%Y-%m-%d}'.format(dates.end))
+    from_str = stringify_date(curr_date)
+    to_str = stringify_date(dates.end)
+    msg = 'Set range from {} to {}'.format(from_str, to_str)
+    click.echo(msg)
+    logging.info('[INFO] {}'.format(msg))
     one_day = datetime.timedelta(1)
     while curr_date <= dates.end:
         if curr_date.weekday() <= 4: # weekdays only
-            click.echo('Processing report {:%Y-%m-%d}'.format(curr_date),
+            click.echo('Processing report {}'.format(from_str),
                         nl=False)
-            report = DailyNAVPS(curr_date)
-            if not report.open:
-                click.echo(' [No data. Date skipped]')
+            try:
+                report = DailyNAVPS(curr_date)
+            except Exception as e:
+                click.echo(' [Error: {}]'.format(e))
+                logging.error('[ERROR] {} at {}'.format(e, from_str))
             else:
-                if not report.data:
-                    click.echo(' [Unable to obtain data]')
+                if not report.open:
+                    click.echo(' [No data. Date skipped]')
+                    logging.info(
+                        '[INFO] Report {} skipped'.format(from_str)
+                    )
                 else:
-                    save_report(report)
-                    click.echo(' [Saved output file]')
-            time.sleep(TIMEOUT)
-        
+                    if not report.data:
+                        click.echo(' [Unable to obtain data]')
+                        logging.warning(
+                            '[WARNING] {} is empty'.format(from_str)
+                        )
+                    else:
+                        save_report(report)
+                        click.echo(' [Saved output file]')
+            finally:
+                time.sleep(TIMEOUT)
         curr_date += one_day
+        from_str = stringify_date(curr_date)
     
     click.echo('Done')
+    logging.info('[INFO] Finished')
