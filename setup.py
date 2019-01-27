@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='navps-ph',
-    version='1.0',
+    version='1.1.0',
     py_modules=['main'],
     include_package_data=True,
     install_requires=[

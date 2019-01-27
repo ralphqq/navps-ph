@@ -7,6 +7,7 @@ from collections import namedtuple
 
 import click
 from dateutil.parser import parse
+import requests
 
 from mutualfunds import DailyNAVPS
 
@@ -68,34 +69,41 @@ def run(start, end):
     click.echo(msg)
     logging.info('[INFO] {}'.format(msg))
     one_day = datetime.timedelta(1)
-    while curr_date <= dates.end:
-        if curr_date.weekday() <= 4: # weekdays only
-            click.echo('Processing report {}'.format(from_str),
-                        nl=False)
-            try:
-                report = DailyNAVPS(curr_date)
-            except Exception as e:
-                click.echo(' [Error: {}]'.format(e))
-                logging.error('[ERROR] {} at {}'.format(e, from_str))
-            else:
-                if not report.open:
-                    click.echo(' [No data. Date skipped]')
-                    logging.info(
-                        '[INFO] Report {} skipped'.format(from_str)
+
+    with requests.Session() as session:
+        logging.info('Session established.')
+        click.echo('Session started')
+        while curr_date <= dates.end:
+            if curr_date.weekday() <= 4: # weekdays only
+                click.echo('Processing report {}'.format(from_str),
+                           nl=False)
+                try:
+                    report = DailyNAVPS(
+                        session=session,
+                        date=curr_date
                     )
+                except Exception as e:
+                    click.echo(' [Error: {}]'.format(e))
+                    logging.error('[ERROR] {} at {}'.format(e, from_str))
                 else:
-                    if not report.data:
-                        click.echo(' [Unable to obtain data]')
-                        logging.warning(
-                            '[WARNING] {} is empty'.format(from_str)
+                    if not report.open:
+                        click.echo(' [No data. Date skipped]')
+                        logging.info(
+                            '[INFO] Report {} skipped'.format(from_str)
                         )
                     else:
-                        save_report(report)
-                        click.echo(' [Saved output file]')
-            finally:
-                time.sleep(TIMEOUT)
-        curr_date += one_day
-        from_str = stringify_date(curr_date)
-    
+                        if not report.data:
+                            click.echo(' [Unable to obtain data]')
+                            logging.warning(
+                                '[WARNING] {} is empty'.format(from_str)
+                            )
+                        else:
+                            save_report(report)
+                            click.echo(' [Saved output file]')
+                finally:
+                    time.sleep(TIMEOUT)
+            curr_date += one_day
+            from_str = stringify_date(curr_date)
+
     click.echo('Done')
     logging.info('[INFO] Finished')

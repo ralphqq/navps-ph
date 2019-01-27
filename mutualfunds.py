@@ -35,8 +35,9 @@ class DailyNAVPS(object):
     """
     Represents the daily NAVPS report object
     """
-    def __init__(self, date=None):
+    def __init__(self, session, date=None):
         """Initializes the object"""
+        self.session = session
         self.date = self._set_date(date)
         self.link = URL.format(self.date)
         self.soup = None
@@ -73,7 +74,7 @@ class DailyNAVPS(object):
         """Read and parse the given webpage"""
         soup = None
         try:
-            page = requests.get(self.link)
+            page = self.session.get(self.link)
             soup = BeautifulSoup(page.text, 'lxml')
         except requests.exceptions.RequestException as e:
             print(e)

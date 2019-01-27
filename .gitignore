@@ -4,3 +4,4 @@
 *.log
 Reports
 __pycache__
+navps_ph.egg-info
